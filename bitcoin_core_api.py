@@ -22,14 +22,28 @@ class BitcoinConnection:
                            + '@localhost:' + self._port
 
     def expand_request_headers(self, expand_headers: dict):
+        """
+        Adds additional request headers
+        :param expand_headers: A dictionary of the form {'header':'value,...}
+        """
         self._headers = {**self._headers, **expand_headers}
 
     def set_port(self, port: int):
+        """
+        Allows users to define non-standard ports, e.g. for use with altcoins
+        :param port:        int, the port number
+        """
         self._port = str(port)
         self._server_url = 'http://' + self._rpc_user + ':' + self._rpc_pw \
                            + '@localhost:' + self._port
 
-    def call(self, method, *params):
+    def call(self, method: str, *params):
+        """
+        Allows the user to send an API Call and returns the response-JSON
+        :param method:      str, the method to call
+        :param params:      the parameters
+        :return:            the API response
+        """
         request_payload = json.dumps({'method': method, 'params': list(params), 'jsonrpc': '2.0'})
         encountered_error = False
 
