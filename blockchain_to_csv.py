@@ -1,75 +1,51 @@
+"""
+Blockchain-Parser: Iterates over the Bitcoin blockchain using Bitcoin Core's CLI, extracts relevant transaction data
+and stores them in multiple CSV-Files.
+
+Requires an installation of Bitcoin Core running a full node with a **fully** indexed blockchain.
+"""
+
+import argparse
 import csv
 import json
 import os
-import subprocess
 import traceback
-from subprocess import Popen
 
 from tqdm import trange
 
+import bitcoin_core_api as btc
 
-def get_bitcoin_blockcount() -> int:
-    """
-    Returns the number of blocks currently in the Bitcoin blockchain
+ap = argparse.ArgumentParser()
+ap.add_argument("--startblock", help="Block to start with, defaults to 1", type=int, default=1)
+ap.add_argument("--endblock", help="Block to stop at, defaults to full length of blockchain", type=int,
+                default=-1)
+ap.add_argument("--dir", help="Directory to store the CSVs in. Defaults to current working directory",
+                type=str, default="")
+ap.add_argument("--port", help="Port of RPC Server. Defaults to 8332",
+                type=int, default=8332)
+ap.add_argument("--uname", help="RPC username. Defaults to alice",
+                type=str, default="alice")
+ap.add_argument("--pw", help="RPC password. Defaults to wonderland",
+                type=str, default="wonderland")
+args = vars(ap.parse_args())
 
-    :return:    int, the number of Blocks
-    """
-    ps = Popen("bitcoin-cli getblockcount", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output: Popen = ps.communicate()[0]
-    return int(output.decode("UTF-8"))
+# Initialize Connection to Bitcoin Core
+con = btc.BitcoinConnection(username=args['uname'], password=args['pw'])
 
+if args['port'] != 8332:
+    con.set_port(args['port'])
 
-def get_blockhash(blocknumber: int) -> str:
-    """
-    Returns the hash of a Bitcoin-Block, given its blocknumber
+START_BLOCK: int = args['startblock']
 
-    :param blocknumber:     int, the blocknumber
-    :return:                str, the Hash
-    """
-    cmd: str = 'bitcoin-cli getblockhash {0}'.format(str(blocknumber))
-    ps = Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output: Popen = ps.communicate()[0]
-    return output.decode("UTF-8")
+if args['endblock'] == -1:
+    END_BLOCK: int = con.call("getblockcount")
+else:
+    END_BLOCK: int = args['endblock']
 
-
-def get_block(blockhash: str) -> dict:
-    """
-    Returns the transaction data of a bitcoin block in JSON-Format
-    :param blockhash:   str, the hash value of the block
-    :return:            dict, the contents of the parsed JSON
-    """
-    cmd: str = 'bitcoin-cli getblock {0}'.format(str(blockhash))
-    ps = Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output: Popen = ps.communicate()[0]
-    return json.loads(output)
-
-
-def decode_transaction(raw_transaction: str, block_height: int) -> dict:
-    cmd: str = 'bitcoin-cli decoderawtransaction {0}'.format(raw_transaction)
-    ps = Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output: Popen = ps.communicate()[0]
-    transaction_json: dict = json.loads(output)
-    return transaction_json
-
-
-def get_transaction(transaction_hash: str, block_height: int) -> dict:
-    """
-
-    :rtype: object
-    """
-    cmd: str = 'bitcoin-cli getrawtransaction {0}'.format(transaction_hash)
-    ps = Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output: Popen = ps.communicate()[0][:-1]
-    output: str = output.decode("UTF-8")
-    transaction_details: dict = decode_transaction(output, block_height)
-    return transaction_details
-
-
-start_block = 1
-end_block = get_bitcoin_blockcount()
-
-# Initialize CSV files
-BASE_PATH: str = '/hdd/bitcoin-csv'
+if args['dir'] == "":
+    BASE_PATH: str = os.getcwd()
+else:
+    BASE_PATH: str = args['dir']
 
 address_file = open(os.path.join(BASE_PATH, 'addresses.csv'), 'w')
 address_file_w = csv.writer(address_file)
@@ -90,16 +66,18 @@ output_address_file_w.writerow(['output', 'address'])
 
 # Debug
 # counter = 1
-for block_height in trange(start_block, end_block):
+for block_height in trange(START_BLOCK, END_BLOCK):
     try:
-        block_contents = get_block(get_blockhash(block_height))
+        block_hash = con.call('getblockhash', block_height)
+        block_contents = con.call('getblock', block_hash)
     except json.decoder.JSONDecodeError as e:
         print('An Error occurred while trying to parse Blockchain \n' + traceback.format_exc())
 
     for i, tx_hash in enumerate(block_contents['tx']):
 
         try:
-            transaction_data: dict = get_transaction(tx_hash, block_height)
+            raw_tx: str = con.call('getrawtransaction', tx_hash)
+            transaction_data = con.call('decoderawtransaction', raw_tx)
         except json.decoder.JSONDecodeError as e:
             print('An Error occurred while trying to parse Blockchain \n' + traceback.format_exc())
 
@@ -115,11 +93,6 @@ for block_height in trange(start_block, end_block):
         output_file_w.writerows(out_values)
         output_transaction_file_w.writerows(out_transactions)
         output_address_file_w.writerows(out_addresses)
-
-    # if counter == 10:
-    #     break
-    # else:
-    #     counter += 1
 
 address_file.close()
 transaction_file.close()
