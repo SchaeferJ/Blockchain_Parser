@@ -88,15 +88,20 @@ for block_height in trange(START_BLOCK, END_BLOCK):
             print('An Error occurred while trying to parse Blockchain \n' + traceback.format_exc())
 
         # Create data structures for the CSV files
-        transaction_file_w.writerow([tx_hash, block_height])
         transaction_output: dict = transaction_data['vout']
 
-        addresses = list(map(lambda x: x['scriptPubKey']['addresses'], transaction_output))
-        out_values = list(map(lambda x: [x['n'], x['value']], transaction_output))
-        out_transactions = list(map(lambda x: [x['n'], tx_hash], transaction_output))
-        out_addresses = list(map(lambda x: [x['n']] + x['scriptPubKey']['addresses'], transaction_output))
-
+        # Skip weird transcations that are probably either bugs or attacks on the bitcoin network
+        # E.g. Transaction 2a0597e665ac3d1cabeede95cedf907934db7f639e477b3c77b242140d8cf728 in Block #71036
+        try:
+            addresses = list(map(lambda x: x['scriptPubKey']['addresses'], transaction_output))
+            out_values = list(map(lambda x: [x['n'], x['value']], transaction_output))
+            out_transactions = list(map(lambda x: [x['n'], tx_hash], transaction_output))
+            out_addresses = list(map(lambda x: [x['n']] + x['scriptPubKey']['addresses'], transaction_output))
+        except KeyError:
+            print("Irregular transaction encountered in block {0}".format(str(block_height)))
+            continue
         # Write CSV files
+        transaction_file_w.writerow([tx_hash, block_height])
         address_file_w.writerows(addresses)
         output_file_w.writerows(out_values)
         output_transaction_file_w.writerows(out_transactions)
