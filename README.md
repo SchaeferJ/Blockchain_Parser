@@ -1,7 +1,7 @@
 # Bitcoin to Neo4j
 
 The code in this repository is an end-to-end solution for loading all bitcoin transactions in the  blockchain into a 
-Neo4j graph database. 
+Neo4j graph database. It is written in Python 3
 
 ## Considerations
 When running this script, you will essentially turn your computer into a _full node_ of the bitcoin network. This means
@@ -42,9 +42,23 @@ MacOS:          /Users/<username>/Library/Application Support/Bitcoin/bitcoin.co
   * MacOS: `bitcoind -daemon`
   * Windows: Open command prompt and tpye `C:\Program Files\Bitcoin\daemon\bitcoind`
  
-**5. Install this Repo**
+**5. Clone this Repo**
 
 Download or clone this repository, save it in the place of your choice and install the dependencies by running
 
 `pip install -r requirements.txt`
 
+**6. Run blockchain-to-csv.py**
+
+Open a terminal and enter:
+`python3 blockchain-to-csv.py`
+
+The following flags are available:
+```
+--help:             Displays a help message
+--startblock=1      Block height to start at. Defaults to 1
+--endblock=-1       Block height to stop at. Defaults to -1 (entire chain)
+--port=8332         Port the RPC server is listening to. Default is 8332
+--uname             Username for the RPC server. Default is 'alice'
+--pwd               Password for the RPC server. Default is 'wonderland'
+```
