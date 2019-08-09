@@ -72,15 +72,8 @@ receives_file_w = csv.writer(receives_file)
 sends_file = open(os.path.join(BASE_PATH, 'sends-rel.csv'), 'w')
 sends_file_w = csv.writer(sends_file)
 
-# Initialize column names
-address_file_w.writerow(['address:ID(Address)'])
+# Add coinbase as "special" address
 address_file_w.writerow(['coinbase'])
-blocks_file_w.writerow(['hash:ID(Block)', 'height:int', 'mediantime:datetime{timezone:UTC}'])
-transaction_file_w.writerow(['txid:ID(Transaction)'])
-before_file_w.writerow([':START_ID(Block)', ':END_ID(Block)', ':TYPE'])
-belongs_file_w.writerow([':START_ID(Transaction)', ':END_ID(Block)', ':TYPE'])
-receives_file_w.writerow([':START_ID(Transaction)', 'value', 'output_nr:int', ':END_ID(Address)', ':TYPE'])
-sends_file_w.writerow([':START_ID(Address)', 'value', ':END_ID(Transaction)', ':TYPE'])
 
 
 def make_sends_list(transaction: dict) -> list:
