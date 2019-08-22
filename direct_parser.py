@@ -1,0 +1,183 @@
+"""
+Blockchain-Parser: Iterates over the Bitcoin blockchain using Bitcoin Core's RPC API, extracts relevant transaction
+data and stores it in multiple CSV-Files.
+
+Requires an installation of Bitcoin Core running a full node with a **fully** indexed blockchain.
+"""
+
+import argparse
+import csv
+import os
+import pickle
+import platform
+
+import rocksdb
+import tqdm
+from blockchain_parser.blockchain import Blockchain
+
+# Parse command-line arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("--startblock", help="Block to start with, defaults to 0", type=int, default=1)
+ap.add_argument("--endblock", help="Block to stop at, defaults to full length of blockchain", type=int,
+                default=-1)
+ap.add_argument("--btcdir", help="Installation path of Bitcoin Core",
+                type=str, default="")
+ap.add_argument("--outdir", help="Directory to store the CSVs in. Defaults to current working directory",
+                type=str, default="")
+ap.add_argument("--dbdir", help="Directory for the RocksDB to reside in. Defaults to current working directory",
+                type=str, default="")
+args = vars(ap.parse_args())
+
+# Initialize global constants from CLI arguments
+START_BLOCK: int = args['startblock']
+
+if args['endblock'] > 0:
+    END_BLOCK: int = args['endblock']
+
+if args['outdir'] == "":
+    BASE_PATH: str = os.path.join(os.getcwd(), "csv")
+    if not os.path.exists(BASE_PATH):
+        os.makedirs(BASE_PATH)
+    print("No output directory specified. Saving files to " + BASE_PATH)
+else:
+    BASE_PATH: str = args['outdir']
+
+if args['dbdir'] == "":
+    DB_PATH: str = os.path.join(os.getcwd(), "transaction_db")
+    print("No database directory specified. Initializing RocksDB in " + DB_PATH)
+else:
+    DB_PATH: str = args['dbdir']
+
+if args['btcdir'] == "":
+    host_os = platform.system()
+    if host_os == "Linux":
+        BLOCK_PATH = os.path.expanduser("~/.bitcoin")
+    elif host_os == "Windows":
+        BLOCK_PATH = os.path.expandvars("%APPDATA%\Bitcoin")
+    elif host_os == "Darwin":
+        BLOCK_PATH = os.path.expanduser("~/Library/Application Support/Bitcoin")
+    else:
+        raise Exception("Could not determine OS. Please manually specify the path to Bitcoin Core.")
+    print("No installation path for Bitcoin Core was specified. Using default path for " + host_os + " systems: " +
+          BLOCK_PATH)
+else:
+    BLOCK_PATH: str = args['btcdir']
+
+BLOCK_PATH = os.path.join(BLOCK_PATH, "blocks")
+INDEX_PATH = os.path.join(BLOCK_PATH, "index")
+
+# Create output files
+address_file = open(os.path.join(BASE_PATH, 'addresses.csv'), 'w')
+address_file_w = csv.writer(address_file)
+
+blocks_file = open(os.path.join(BASE_PATH, 'blocks.csv'), 'w')
+blocks_file_w = csv.writer(blocks_file)
+
+transaction_file = open(os.path.join(BASE_PATH, 'transactions.csv'), 'w')
+transaction_file_w = csv.writer(transaction_file)
+
+before_file = open(os.path.join(BASE_PATH, 'before-rel.csv'), 'w')
+before_file_w = csv.writer(before_file)
+
+belongs_file = open(os.path.join(BASE_PATH, 'belongs-rel.csv'), 'w')
+belongs_file_w = csv.writer(belongs_file)
+
+receives_file = open(os.path.join(BASE_PATH, 'receives-rel.csv'), 'w')
+receives_file_w = csv.writer(receives_file)
+
+sends_file = open(os.path.join(BASE_PATH, 'sends-rel.csv'), 'w')
+sends_file_w = csv.writer(sends_file)
+
+# Add coinbase as "special" address
+address_file_w.writerow(['coinbase'])
+# Define options for RocksDB-Database
+opts = rocksdb.Options()
+# Create new instance if not already present
+opts.create_if_missing = True
+# We have A LOT of BTC-Transactions, so file open limit should be increased
+opts.max_open_files = 1000000
+# Increase buffer size since I/O is the bottleneck, not RAM
+opts.write_buffer_size = 67108864
+opts.max_write_buffer_number = 3
+opts.target_file_size_base = 67108864
+# Bloom filters for faster lookup
+opts.table_factory = rocksdb.BlockBasedTableFactory(
+    filter_policy=rocksdb.BloomFilterPolicy(10),
+    block_cache=rocksdb.LRUCache(2 * (1024 ** 3)),
+    block_cache_compressed=rocksdb.LRUCache(500 * (1024 ** 2)))
+
+# Load RocksDB Database
+db = rocksdb.DB(DB_PATH, opts)
+
+# Load Blockchain
+blockchain = Blockchain(BLOCK_PATH)
+# Initialize iterator with respect to user specifications
+if END_BLOCK < 1:
+    blockchain.get_ordered_blocks(INDEX_PATH, start=START_BLOCK)
+    TOTAL_BLOCKS = len(blockchain.blockIndexes)
+    print("Processing the entire blockchain. Currently " + str(TOTAL_BLOCKS) + " blocks.")
+    print("INFO: Depending on your system, this process may take up to a week. You can interrupt the process " +
+          "at any time by pressing CTRL+C.")
+else:
+    blockchain.get_ordered_blocks(INDEX_PATH, start=START_BLOCK, end=END_BLOCK)
+    TOTAL_BLOCKS = len(blockchain.blockIndexes)
+
+for block in tqdm.tqdm(blockchain, total=TOTAL_BLOCKS):
+    block_height = block.height
+    block_hash = block.hash
+    block_timestamp = block.header.timestamp.strftime('%Y-%m-%dT%H:%M')
+    previous_block_hash = block.header.previous_block_hash
+
+    blocks_file_w.writerow([block_hash, block_height, block_timestamp])
+    before_file_w.writerow([previous_block_hash, block_hash, 'PRECEDES'])
+
+    for tx in block.transactions:
+        tx_id = tx.txid
+        outputs = []
+        sends = []
+        addresses = []
+        for o in range(len(tx.outputs)):
+            try:
+                addr = tx.outputs[o].addresses[0].address
+                val = tx.outputs[o].value
+                outputs.append([val, addr, o])
+                sends.append([addr, val, tx_id, 'SENDS'])
+                addresses.append([addr])
+            except Exception as e:
+                val = tx.outputs[o].value
+                outputs.append(['unknown', val, tx_id, 'SENDS'])
+                pass
+        db.put(tx_id.encode('utf-8'), pickle.dumps(outputs))
+        tx_in = tx.inputs
+        if not tx.is_coinbase():
+            inputs = []
+            for i in tx_in:
+                in_hash = i.transaction_hash
+                in_index = i.transaction_index
+                try:
+                    in_transaction = pickle.loads(db.get(in_hash.encode('utf-8')))
+                    in_value = in_transaction[in_index][0]
+                    in_address = in_transaction[in_index][1]
+                    inputs.append([in_address, in_value, tx_id, 'RECEIVES'])
+                except Exception as e:
+                    print(e)
+                    continue
+                del in_transaction, in_address, in_value, in_hash, in_index
+        else:
+            inputs = [["coinbase", sum(map(lambda x: x.value, tx.outputs)), tx_id, 'RECEIVES']]
+
+        # Write CSV files
+        transaction_file_w.writerow([tx_id])
+        belongs_file_w.writerow([tx_id, block_hash, 'BELONGS_TO'])
+        address_file_w.writerows(addresses)
+        receives_file_w.writerows(inputs)
+        sends_file_w.writerows(sends)
+
+# Finalize
+address_file.close()
+blocks_file.close()
+transaction_file.close()
+before_file.close()
+belongs_file.close()
+receives_file.close()
+sends_file.close()
