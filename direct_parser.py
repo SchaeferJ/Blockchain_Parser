@@ -1,3 +1,5 @@
+#!/usr/local/bin/python3
+
 """
 Blockchain-Parser: Iterates over the Bitcoin blockchain using Bitcoin Core's RPC API, extracts relevant transaction
 data and stores it in multiple CSV-Files.

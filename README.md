@@ -1,12 +1,15 @@
 # Bitcoin to Neo4j
 
-The code in this repository is an end-to-end solution for loading all bitcoin transactions in the  blockchain into a 
-Neo4j graph database. It is written in Python 3
+The code in this repository is an end-to-end solution for loading all bitcoin transactions in the blockchain into a 
+Neo4j graph database. It is written in Python 3 and optimized for Linux, but also works on MacOS and Windows.
 
 ## Considerations
 When running this script, you will essentially turn your computer into a _full node_ of the bitcoin network. This means
-that you will have to **download the ENTIRE (!) blockchain** (> 230 GB) on your PC. Make sure that you have sufficient
-space on your hard drive and that your internet connection is not metered. 
+that you will have to **download the ENTIRE (!) blockchain** (> 230 GB) on your PC. I strongly recommend using a system
+fulfilling the following minimum requirements:
+
+* 1 TB of disk space, ideally SSD
+* 16 GB of RAM
 
 **Depending on your bandwidth and your system configuration, this script might take between 2-7 days to complete.**
 
@@ -28,8 +31,6 @@ Prior to running your bitcoin node for the first time, you should adjust the bit
 ```
 txindex=1
 server=1
-rpcuser=<YOUR_USERNAME>
-rpcpassword=<YOUR_PASSWORD>
 ```
 Typical locations for the bitcoin.conf file are:
 ```
@@ -38,17 +39,40 @@ Linux:          /home/<username>/.bitcoin/bitcoin.conf
 MacOS:          /Users/<username>/Library/Application Support/Bitcoin/bitcoin.conf
 ```
 **4. Run the Bitcoin client**
-  * Linux: `$ bitcoind --daemon`
+  * Linux: `bitcoind --daemon`
   * MacOS: `bitcoind -daemon`
   * Windows: Open command prompt and tpye `C:\Program Files\Bitcoin\daemon\bitcoind`
+
+ Your system is now downloading the ledger. Once this is complete, you should stop the client before proceeding.
+ This can be done with `bitcoin-cli -stop`
  
-**5. Clone this Repo**
+ **5. Install the parsing library**
+ 
+ As of now, the library used for parsing the Blockchain is not available through pip. To install it manually follow
+ the instructions on the [project page](https://github.com/alecalve/python-bitcoin-blockchain-parser).
+ 
+
+**6. Clone this Repo**
 
 Download or clone this repository, save it in the place of your choice and install the dependencies by running
 
 `pip install -r requirements.txt`
 
-**6. Run blockchain-to-csv.py**
+ **6.1 Linux only: Update ulimits**
+ 
+ The data processing and especially RocksDB will require A LOT of file operations. Linux often restricts the number of 
+ file handles that can be acquired by a process. 
+ 
+ * Type `ulimit -a` to display your current limit. If a low limit is set
+ (typically 1024) wou will most likely run into problems when parsing the blockchain. 
+ 
+ * Open the system.conf file: `sudo nano /etc/systemd/system.conf`
+ 
+ * Search for the line `#DefaultLimitNOFILE=`, remove the # and set the limit to 1000000
+ 
+ * Reboot and type `ulimit -a` to check if change was successful
+
+**7. Run blockchain-to-csv.py**
 
 Open a terminal and enter:
 `python3 blockchain-to-csv.py`
@@ -58,7 +82,7 @@ The following flags are available:
 --help:             Displays a help message
 --startblock=1      Block height to start at. Defaults to 1
 --endblock=-1       Block height to stop at. Defaults to -1 (entire chain)
---port=8332         Port the RPC server is listening to. Default is 8332
---uname             Username for the RPC server. Default is 'alice'
---pwd               Password for the RPC server. Default is 'wonderland'
+--btcdir            Directory of Bitcoin Core. Defaults to system standard
+--outdir            Output directory. Defaults to working directory.
+--dbdir             Directory for RocksDB database. Defaults to working directory.
 ```
