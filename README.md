@@ -16,7 +16,7 @@ fulfilling the following minimum requirements:
 ## Instructions
 
 **1. Install Neo4j**
-  * On Debian/Ubuntu:  `$ sudo apt-get install neo4j`
+  * On Debian/Ubuntu:  `sudo apt-get install neo4j`
   * All others click [here](https://neo4j.com/docs/operations-manual/current/installation/) for Instructions
 
 **2. Install Bitcoin Core**
@@ -39,8 +39,7 @@ Linux:          /home/<username>/.bitcoin/bitcoin.conf
 MacOS:          /Users/<username>/Library/Application Support/Bitcoin/bitcoin.conf
 ```
 **4. Run the Bitcoin client**
-  * Linux: `bitcoind --daemon`
-  * MacOS: `bitcoind -daemon`
+  * Linux/MacOS: `bitcoind --daemon`
   * Windows: Open command prompt and tpye `C:\Program Files\Bitcoin\daemon\bitcoind`
 
  Your system is now downloading the ledger. Once this is complete, you should stop the client before proceeding.
@@ -63,14 +62,14 @@ Download or clone this repository, save it in the place of your choice and insta
  The data processing and especially RocksDB will require A LOT of file operations. Linux often restricts the number of 
  file handles that can be acquired by a process. 
  
- * Type `ulimit -a` to display your current limit. If a low limit is set
+ * Type `ulimit -n` to display your current limit. If a low limit is set
  (typically 1024) wou will most likely run into problems when parsing the blockchain. 
  
  * Open the system.conf file: `sudo nano /etc/systemd/system.conf`
  
  * Search for the line `#DefaultLimitNOFILE=`, remove the # and set the limit to 1000000
  
- * Reboot and type `ulimit -a` to check if change was successful
+ * Reboot and type `ulimit -n` to check if change was successful
 
 **7. Run blockchain-to-csv.py**
 
@@ -80,7 +79,7 @@ Open a terminal and enter:
 The following flags are available:
 ```
 --help:             Displays a help message
---startblock=1      Block height to start at. Defaults to 1
+--startblock=1      Block height to start at. Defaults to 0 (Genesis)
 --endblock=-1       Block height to stop at. Defaults to -1 (entire chain)
 --btcdir            Directory of Bitcoin Core. Defaults to system standard
 --outdir            Output directory. Defaults to working directory.

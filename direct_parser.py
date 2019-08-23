@@ -19,7 +19,7 @@ from blockchain_parser.blockchain import Blockchain
 
 # Parse command-line arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("--startblock", help="Block to start with, defaults to 0", type=int, default=1)
+ap.add_argument("--startblock", help="Block to start with, defaults to 0", type=int, default=0)
 ap.add_argument("--endblock", help="Block to stop at, defaults to full length of blockchain", type=int,
                 default=-1)
 ap.add_argument("--btcdir", help="Installation path of Bitcoin Core",
@@ -136,23 +136,23 @@ for block in tqdm.tqdm(blockchain, total=TOTAL_BLOCKS):
     for tx in block.transactions:
         tx_id = tx.txid
         outputs = []
-        sends = []
         addresses = []
+        receives = []
         for o in range(len(tx.outputs)):
             try:
                 addr = tx.outputs[o].addresses[0].address
                 val = tx.outputs[o].value
                 outputs.append([val, addr, o])
-                sends.append([addr, val, tx_id, 'SENDS'])
+                receives.append([tx_id, val, o, addr, 'RECEIVES'])
                 addresses.append([addr])
             except Exception as e:
                 val = tx.outputs[o].value
-                outputs.append(['unknown', val, tx_id, 'SENDS'])
+                outputs.append([val, 'unknown', o])
                 pass
         db.put(tx_id.encode('utf-8'), pickle.dumps(outputs))
         tx_in = tx.inputs
         if not tx.is_coinbase():
-            inputs = []
+            sends = []
             for i in tx_in:
                 in_hash = i.transaction_hash
                 in_index = i.transaction_index
@@ -160,19 +160,20 @@ for block in tqdm.tqdm(blockchain, total=TOTAL_BLOCKS):
                     in_transaction = pickle.loads(db.get(in_hash.encode('utf-8')))
                     in_value = in_transaction[in_index][0]
                     in_address = in_transaction[in_index][1]
-                    inputs.append([in_address, in_value, tx_id, 'RECEIVES'])
+                    sends.append([in_address, in_value, tx_id, 'SENDS'])
                 except Exception as e:
                     print(e)
                     continue
+                    # raise Exception("Meh.")
                 del in_transaction, in_address, in_value, in_hash, in_index
         else:
-            inputs = [["coinbase", sum(map(lambda x: x.value, tx.outputs)), tx_id, 'RECEIVES']]
+            sends = [["coinbase", sum(map(lambda x: x.value, tx.outputs)), tx_id, 'SENDS']]
 
         # Write CSV files
         transaction_file_w.writerow([tx_id])
         belongs_file_w.writerow([tx_id, block_hash, 'BELONGS_TO'])
         address_file_w.writerows(addresses)
-        receives_file_w.writerows(inputs)
+        receives_file_w.writerows(receives)
         sends_file_w.writerows(sends)
 
 # Finalize
