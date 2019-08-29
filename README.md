@@ -85,3 +85,7 @@ The following flags are available:
 --outdir            Output directory. Defaults to working directory.
 --dbdir             Directory for RocksDB database. Defaults to working directory.
 ```
+
+**8. Import CSVs to Neo4j**
+* Linux:
+    * Run 
