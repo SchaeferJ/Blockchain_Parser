@@ -71,21 +71,20 @@ Download or clone this repository, save it in the place of your choice and insta
  
  * Reboot and type `ulimit -n` to check if change was successful
 
-**7. Run blockchain-to-csv.py**
+**7. Run btc-to-csv.py**
 
 Open a terminal and enter:
 `python3 blockchain-to-csv.py`
 
-The following flags are available:
+The following flags are available:____
 ```
 --help:             Displays a help message
---startblock=1      Block height to start at. Defaults to 0 (Genesis)
---endblock=-1       Block height to stop at. Defaults to -1 (entire chain)
+--startblock        Block height to start at. Defaults to 0 (Genesis)
+--endblock          Block height to stop at. Defaults to -1 (entire chain)
 --btcdir            Directory of Bitcoin Core. Defaults to system standard
 --outdir            Output directory. Defaults to working directory.
 --dbdir             Directory for RocksDB database. Defaults to working directory.
 ```
 
 **8. Import CSVs to Neo4j**
-* Linux:
-    * Run 
+* Linux: `bash ./csv-to-neo4j.sh`
