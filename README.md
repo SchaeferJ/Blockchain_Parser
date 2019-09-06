@@ -8,8 +8,10 @@ When running this script, you will essentially turn your computer into a _full n
 that you will have to **download the ENTIRE (!) blockchain** (> 230 GB) on your PC. I strongly recommend using a system
 fulfilling the following minimum requirements:
 
-* 1 TB of disk space, ideally SSD
-* 16 GB of RAM
+* 1 TB of fast disk space, ideally PCIe-SSD
+* As much RAM as you can afford, ideally >= 32 GB
+* Intel Core i7/AMD Ryzen 7 @ 3,5 GHz or better
+* Unmetered broadband internet access, ideally >= 50 Mbit/s
 
 **Depending on your bandwidth and your system configuration, this script might take between 2-7 days to complete.**
 

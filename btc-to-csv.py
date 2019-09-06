@@ -1,10 +1,12 @@
 #!/usr/local/bin/python3
 
 """
-Blockchain-Parser: Iterates over the Bitcoin blockchain using Bitcoin Core's RPC API, extracts relevant transaction
-data and stores it in multiple CSV-Files.
+Converts Bitcoin binary block files into CSVs for import into Neo4j.
 
-Requires an installation of Bitcoin Core running a full node with a **fully** indexed blockchain.
+Requires an installation of Bitcoin Core running a full node with a **fully** indexed blockchain. NOTE: Bitcoin
+daemon must NOT be running during conversion.
+
+(c) 2019 Jochen Schäfer for Südwestrundfunk AdöR
 """
 
 import argparse
@@ -128,6 +130,7 @@ for block in tqdm.tqdm(blockchain, total=TOTAL_BLOCKS):
     block_height = block.height
     block_hash = block.hash
     block_timestamp = block.header.timestamp.strftime('%Y-%m-%dT%H:%M')
+    block_date = block.header.timestamp.strftime('%Y-%m-%d')
     previous_block_hash = block.header.previous_block_hash
 
     blocks_file_w.writerow([block_hash, block_height, block_timestamp])
@@ -170,7 +173,7 @@ for block in tqdm.tqdm(blockchain, total=TOTAL_BLOCKS):
             sends = [["coinbase", sum(map(lambda x: x.value, tx.outputs)), tx_id, 'SENDS']]
 
         # Write CSV files
-        transaction_file_w.writerow([tx_id])
+        transaction_file_w.writerow([tx_id, block_date])
         belongs_file_w.writerow([tx_id, block_hash, 'BELONGS_TO'])
         address_file_w.writerows(addresses)
         receives_file_w.writerows(receives)
