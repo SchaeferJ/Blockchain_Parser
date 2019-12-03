@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 sudo systemctl stop neo4j
 sudo chmod -R a+rwx /var/log/neo4j/
-sudo chmod -R a+rwx /hdd/neo4j/
+sudo chmod -R a+rwx /ssd2/neo4j/
 
-export DATA=/hdd/bitcoin-csv/data
-export HEADERS=/hdd/bitcoin-csv/headers
+export DATA=/ssd/bitcoin-csv/data
+export HEADERS=/ssd/bitcoin-csv/headers
 
 neo4j-admin import \
 --mode=csv \
@@ -21,5 +21,5 @@ neo4j-admin import \
 --high-io=true
 
 sudo chmod -R a+rwx /var/log/neo4j/
-sudo chmod -R a+rwx /hdd/neo4j/
+sudo chmod -R a+rwx /ssd2/neo4j/
 sudo systemctl start neo4j

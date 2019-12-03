@@ -117,16 +117,17 @@ db = rocksdb.DB(DB_PATH, opts)
 blockchain = Blockchain(BLOCK_PATH)
 # Initialize iterator with respect to user specifications
 if END_BLOCK < 1:
-    blockchain.get_ordered_blocks(INDEX_PATH, start=START_BLOCK)
+    blockchain = blockchain.get_ordered_blocks(INDEX_PATH, start=START_BLOCK)
     TOTAL_BLOCKS = len(blockchain.blockIndexes)
-    print("Processing the entire blockchain. Currently " + str(TOTAL_BLOCKS) + " blocks.")
+    print("Processing the entire blockchain.")
     print("INFO: Depending on your system, this process may take up to a week. You can interrupt the process " +
           "at any time by pressing CTRL+C.")
+    iterator = blockchain
 else:
     blockchain.get_ordered_blocks(INDEX_PATH, start=START_BLOCK, end=END_BLOCK)
-    TOTAL_BLOCKS = len(blockchain.blockIndexes)
+    iterator = tqdm.tqdm(blockchain, total=END_BLOCK)
 
-for block in tqdm.tqdm(blockchain, total=TOTAL_BLOCKS):
+for block in iterator:
     block_height = block.height
     block_hash = block.hash
     block_timestamp = block.header.timestamp.strftime('%Y-%m-%dT%H:%M')
@@ -141,15 +142,19 @@ for block in tqdm.tqdm(blockchain, total=TOTAL_BLOCKS):
         outputs = []
         addresses = []
         receives = []
+        inSum = 0
+        outSum = 0
         for o in range(len(tx.outputs)):
             try:
                 addr = tx.outputs[o].addresses[0].address
                 val = tx.outputs[o].value
+                outSum += val
                 outputs.append([val, addr, o])
                 receives.append([tx_id, val, o, addr, 'RECEIVES'])
                 addresses.append([addr])
             except Exception as e:
                 val = tx.outputs[o].value
+                outSum += val
                 outputs.append([val, 'unknown', o])
                 pass
         db.put(tx_id.encode('utf-8'), pickle.dumps(outputs))
@@ -162,6 +167,7 @@ for block in tqdm.tqdm(blockchain, total=TOTAL_BLOCKS):
                 try:
                     in_transaction = pickle.loads(db.get(in_hash.encode('utf-8')))
                     in_value = in_transaction[in_index][0]
+                    inSum += in_value
                     in_address = in_transaction[in_index][1]
                     sends.append([in_address, in_value, tx_id, 'SENDS'])
                 except Exception as e:
@@ -171,9 +177,13 @@ for block in tqdm.tqdm(blockchain, total=TOTAL_BLOCKS):
                 del in_transaction, in_address, in_value, in_hash, in_index
         else:
             sends = [["coinbase", sum(map(lambda x: x.value, tx.outputs)), tx_id, 'SENDS']]
+            inSum = sends[0][1]
+
+        inDegree = len(sends)
+        outDegree = len(tx.outputs)
 
         # Write CSV files
-        transaction_file_w.writerow([tx_id, block_date])
+        transaction_file_w.writerow([tx_id, block_date, inDegree, outDegree, inSum, outSum])
         belongs_file_w.writerow([tx_id, block_hash, 'BELONGS_TO'])
         address_file_w.writerows(addresses)
         receives_file_w.writerows(receives)
