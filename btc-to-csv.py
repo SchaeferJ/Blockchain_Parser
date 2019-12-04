@@ -15,6 +15,7 @@ import os
 import pickle
 import platform
 
+import psutil
 import rocksdb
 import tqdm
 from blockchain_parser.blockchain import Blockchain
@@ -94,6 +95,14 @@ sends_file_w = csv.writer(sends_file)
 
 # Add coinbase as "special" address
 address_file_w.writerow(['coinbase'])
+
+# Read installed memory to allocate as much RAM as possible to database without bricking the system.
+mem = psutil.virtual_memory()
+db_memory = mem.available - (4 * 1024 ** 3)
+print("Found " + str(round(mem.total / 1024 ** 3, 1)) + "GB of RAM on your system, " + str(
+    round(mem.available / 1024 ** 3, 1)) + \
+      "GB of which are available. RocksDB will use " + str(round(db_memory / 1024 ** 3, 1)) + "GB for Cache.")
+
 # Define options for RocksDB-Database
 opts = rocksdb.Options()
 # Create new instance if not already present
@@ -107,8 +116,8 @@ opts.target_file_size_base = 67108864
 # Bloom filters for faster lookup
 opts.table_factory = rocksdb.BlockBasedTableFactory(
     filter_policy=rocksdb.BloomFilterPolicy(12),
-    block_cache=rocksdb.LRUCache(60 * (1024 ** 3)),
-    block_cache_compressed=rocksdb.LRUCache(20 * (1024 ** 3)))
+    block_cache=rocksdb.LRUCache(db_memory * 0.8),
+    block_cache_compressed=rocksdb.LRUCache(db_memory * 0.2))
 
 # Load RocksDB Database
 db = rocksdb.DB(DB_PATH, opts)
