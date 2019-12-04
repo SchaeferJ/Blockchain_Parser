@@ -106,9 +106,9 @@ opts.max_write_buffer_number = 3
 opts.target_file_size_base = 67108864
 # Bloom filters for faster lookup
 opts.table_factory = rocksdb.BlockBasedTableFactory(
-    filter_policy=rocksdb.BloomFilterPolicy(10),
-    block_cache=rocksdb.LRUCache(2 * (1024 ** 3)),
-    block_cache_compressed=rocksdb.LRUCache(500 * (1024 ** 2)))
+    filter_policy=rocksdb.BloomFilterPolicy(12),
+    block_cache=rocksdb.LRUCache(60 * (1024 ** 3)),
+    block_cache_compressed=rocksdb.LRUCache(20 * (1024 ** 3)))
 
 # Load RocksDB Database
 db = rocksdb.DB(DB_PATH, opts)
