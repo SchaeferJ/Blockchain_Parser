@@ -26,7 +26,7 @@ the last phase of the import process (Neo4j import) you will not be able to use 
 
 **2. Install RocksDB**
 
-Click [here](https://github.com/facebook/rocksdb/blob/master/INSTALL.md#supported-platforms) for instructions.
+Click [here](https://python-rocksdb.readthedocs.io/en/latest/installation.html) for instructions.
 
 **3. Install Bitcoin Core**
   * [Linux](https://bitcoin.org/en/full-node#linux-instructions) (Install Daemon only)
@@ -49,7 +49,7 @@ Linux:          /home/<username>/.bitcoin/bitcoin.conf
 MacOS:          /Users/<username>/Library/Application Support/Bitcoin/bitcoin.conf
 ```
 **5. Run the Bitcoin client**
-  * Linux/MacOS: `bitcoind --daemon`
+  * Linux/MacOS: `bitcoind -daemon`
   * Windows: Open command prompt and tpye `C:\Program Files\Bitcoin\daemon\bitcoind`
 
  Your system is now downloading the ledger. Once this is complete, you should stop the client before proceeding.
