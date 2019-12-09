@@ -1,7 +1,7 @@
 # Bitcoin to Neo4j
 
 The code in this repository is an end-to-end solution for loading all bitcoin transactions in the blockchain into a 
-Neo4j graph database. It is written in Python 3 and optimized for Linux, but also works on MacOS and Windows. Windows
+Neo4j graph database. It is written in Python 3 and optimized for Linux, but the single-core version also works on MacOS and Windows. Windows
 users might have to compile some of the dependencies manually.
 
 ## Considerations
@@ -85,10 +85,13 @@ Download or clone this repository, save it in the place of your choice and insta
  
  * Reboot and type `ulimit -n` to check if change was successful
 
-**8. Run btc-to-csv.py**
+**8. Run the CSV generator**
 
 Open a terminal and enter:
-`python3 blockchain-to-csv.py`
+`python3 btc_parallel.py`
+
+If you are using a weak machine or run this code on a system that is not Linux, you should use the single-threaded version:
+`python3 btc-to-csv.py`
 
 The following flags are available:
 ```
@@ -105,3 +108,4 @@ The following flags are available:
 
 **9. Import CSVs to Neo4j**
 * Linux: `bash ./csv-to-neo4j.sh`
+* Others: Please create appropriate [header files](https://neo4j.com/docs/operations-manual/current/tools/import/file-header-format/) and refer to the documentation of the [import tool](https://neo4j.com/docs/operations-manual/current/tools/import/)
