@@ -31,6 +31,10 @@ ap.add_argument("--outdir", help="Directory to store the CSVs in. Defaults to cu
                 type=str, default="")
 ap.add_argument("--dbdir", help="Directory for the RocksDB to reside in. Defaults to current working directory",
                 type=str, default="")
+ap.add_argument("--cores", help="Number of cores the parser is allowed to use",
+                type=str, default="-1")
+ap.add_argument("--mem", help="Maximum memory (in MB) the parser is allowed to use",
+                type=str, default="-1")
 args = vars(ap.parse_args())
 
 # Initialize global constants from CLI arguments
@@ -101,26 +105,50 @@ address_file_w.writerow(['coinbase'])
 
 # Read installed memory to allocate as much RAM as possible to database without bricking the system.
 mem = psutil.virtual_memory()
-db_memory = mem.available - (4 * 1024 ** 3)
+cpus = psutil.cpu_count()
+
+if 0 < args["mem"] <= mem:
+    db_memory = args["mem"]
+else:
+    db_memory = mem.available - (4 * 1024 ** 3)
+
 print("Found " + str(round(mem.total / 1024 ** 3, 1)) + "GB of RAM on your system, " + str(
     round(mem.available / 1024 ** 3, 1)) + \
       "GB of which are available. RocksDB will use up to" + str(round(db_memory / 1024 ** 3, 1)) + "GB for Cache.")
+
+if 0 < args["cores"] <= cpus:
+    max_jobs = args["cores"]
+else:
+    max_jobs = cpus - 1
+
+print("Found " + str(cpus) + " CPU cores on your system. " + str(max_jobs) + " cores will be used.")
 
 # Define options for RocksDB-Database
 opts = rocksdb.Options()
 # Create new instance if not already present
 opts.create_if_missing = True
 # We have A LOT of BTC-Transactions, so file open limit should be increased
-opts.max_open_files = 1000000
+opts.max_open_files = -1
 # Increase buffer size since I/O is the bottleneck, not RAM
-opts.write_buffer_size = 67108864
-opts.max_write_buffer_number = 3
-opts.target_file_size_base = 67108864
+opts.memtable_factory = rocksdb.VectorMemtableFactory()
+opts.write_buffer_size = db_memory*0.2
+opts.max_write_buffer_number = 10
+opts.target_file_size_base = 128*1024**2
+opts.max_background_compactions=10
+# Bulkload Options as suggested by RocksDB FAQ
+opts.disable_auto_compactions=True
+opts.max_background_flushes=15
+opts.allow_concurrent_memtable_write=False
+opts.level0_file_num_compaction_trigger=-1
+opts.level0_slowdown_writes_trigger=-1
+opts.level0_stop_writes_trigger=999999
+opts.compression = rocksdb.CompressionType.no_compression
+
 # Bloom filters for faster lookup
 opts.table_factory = rocksdb.BlockBasedTableFactory(
-    filter_policy=rocksdb.BloomFilterPolicy(12),
-    block_cache=rocksdb.LRUCache(db_memory * 0.8),
-    block_cache_compressed=rocksdb.LRUCache(db_memory * 0.2))
+    filter_policy=rocksdb.BloomFilterPolicy(10),
+    block_cache=rocksdb.LRUCache(db_memory * 0.4),
+    block_cache_compressed=rocksdb.LRUCache(db_memory * 0.3))
 
 # Load RocksDB Database
 db = rocksdb.DB(DB_PATH, opts)
