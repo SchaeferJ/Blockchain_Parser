@@ -36,9 +36,9 @@ ap.add_argument("--outdir", help="Directory to store the CSVs in. Defaults to cu
 ap.add_argument("--dbdir", help="Directory for the RocksDB to reside in. Defaults to current working directory",
                 type=str, default="")
 ap.add_argument("--cores", help="Number of cores the parser is allowed to use",
-                type=str, default="-1")
+                type=str, default=-1)
 ap.add_argument("--mem", help="Maximum memory (in MB) the parser is allowed to use",
-                type=str, default="-1")
+                type=str, default=-1)
 
 args = vars(ap.parse_args())
 
