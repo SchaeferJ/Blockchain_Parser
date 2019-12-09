@@ -1,6 +1,6 @@
 # Bitcoin to Neo4j
 
-The code in this repository is an end-to-end solution for loading all bitcoin transactions in the blockchain into a 
+The code in this repository is an end-to-end solution for loading all bitcoin transactions in the blockchain into a
 Neo4j graph database. It is written in Python 3 and optimized for Linux, but the single-core version also works on MacOS and Windows. Windows
 users might have to compile some of the dependencies manually.
 
@@ -15,7 +15,7 @@ to run smoothly, I strongly recommend using a system fulfilling the following mi
 * Intel Core i5/AMD Ryzen 5 @ 3,5 GHz or better
 * Unmetered broadband internet access, ideally >= 50 Mbit/s
 
-**Depending on your bandwidth and your system configuration, this script might take between 4-10 days to complete. During 
+**Depending on your bandwidth and your system configuration, this script might take between 4-10 days to complete. During
 the last phase of the import process (Neo4j import) you will not be able to use your computer!**
 
 ## Instructions
@@ -58,12 +58,12 @@ MacOS:          /Users/<username>/Library/Application Support/Bitcoin/bitcoin.co
 
  Your system is now downloading the ledger. Once this is complete, you should stop the client before proceeding.
  This can be done with `bitcoin-cli -stop`
- 
+
  **6. Install the parsing library**
- 
+
  As of now, the library used for parsing the Blockchain is not available through pip. To install it manually follow
  the instructions on the [project page](https://github.com/SchaeferJ/python-bitcoin-blockchain-parser).
- 
+
 
 **7. Clone this Repo**
 
@@ -72,17 +72,17 @@ Download or clone this repository, save it in the place of your choice and insta
 `pip install -r requirements.txt`
 
  **7.1 Linux only: Update ulimits**
- 
- The data processing and especially RocksDB will require A LOT of file operations. Linux often restricts the number of 
- file handles that can be acquired by a process. 
- 
+
+ The data processing and especially RocksDB will require A LOT of file operations. Linux often restricts the number of
+ file handles that can be acquired by a process.
+
  * Type `ulimit -n` to display your current limit. If a low limit is set
- (typically 1024) wou will most likely run into problems when parsing the blockchain. 
- 
+ (typically 1024) wou will most likely run into problems when parsing the blockchain.
+
  * Open the system.conf file: `sudo nano /etc/systemd/system.conf`
- 
+
  * Search for the line `#DefaultLimitNOFILE=`, remove the # and set the limit to 1000000
- 
+
  * Reboot and type `ulimit -n` to check if change was successful
 
 **8. Run the CSV generator**
@@ -109,3 +109,10 @@ The following flags are available:
 **9. Import CSVs to Neo4j**
 * Linux: `bash ./csv-to-neo4j.sh`
 * Others: Please create appropriate [header files](https://neo4j.com/docs/operations-manual/current/tools/import/file-header-format/) and refer to the documentation of the [import tool](https://neo4j.com/docs/operations-manual/current/tools/import/)
+
+**10. Construct additional attributes**
+For efficiency reasons, not all node attributes are generated during parsing. In this last step, you have
+to generate the attributes manually:
+
+* Linux/MacOS: 'neo4j-shell -file feature-construction.cql'
+* Windows: 'Neo4jShell.bat -file feature-construction.cql'
