@@ -1,0 +1,18 @@
+call apoc.periodic.iterate(
+'MATCH (a:Address)
+WITH a, size((a:Address)-[:SENDS]->(:Transaction)) AS outDegree
+WHERE NOT EXISTS(a.outDegree)
+RETURN a, outDegree'
+,
+'SET a.outDegree=outDegree', {batchSize:10000,iterateList:true,parallel:true}
+);
+
+
+call apoc.periodic.iterate(
+'MATCH (a:Address)
+WITH a, size((:Transaction)-[:RECEIVES]->(a:Address)) AS inDegree
+WHERE NOT EXISTS(a.inDegree)
+RETURN a, inDegree'
+,
+'SET a.inDegree=inDegree', {batchSize:10000,iterateList:true,parallel:true}
+);
