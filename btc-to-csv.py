@@ -71,6 +71,9 @@ else:
 BLOCK_PATH = os.path.join(BLOCK_PATH, "blocks")
 INDEX_PATH = os.path.join(BLOCK_PATH, "index")
 
+if not os.path.exists(BASE_PATH):
+    os.makedirs(BASE_PATH)
+
 # Create output files
 address_file = open(os.path.join(BASE_PATH, 'addresses.csv'), 'w')
 address_file_w = csv.writer(address_file)
@@ -101,7 +104,7 @@ mem = psutil.virtual_memory()
 db_memory = mem.available - (4 * 1024 ** 3)
 print("Found " + str(round(mem.total / 1024 ** 3, 1)) + "GB of RAM on your system, " + str(
     round(mem.available / 1024 ** 3, 1)) + \
-      "GB of which are available. RocksDB will use " + str(round(db_memory / 1024 ** 3, 1)) + "GB for Cache.")
+      "GB of which are available. RocksDB will use up to" + str(round(db_memory / 1024 ** 3, 1)) + "GB for Cache.")
 
 # Define options for RocksDB-Database
 opts = rocksdb.Options()
@@ -133,7 +136,7 @@ if END_BLOCK < 1:
           "at any time by pressing CTRL+C.")
     iterator = blockchain
 else:
-    blockchain.get_ordered_blocks(INDEX_PATH, start=START_BLOCK, end=END_BLOCK)
+    blockchain = blockchain.get_ordered_blocks(INDEX_PATH, start=START_BLOCK, end=END_BLOCK)
     iterator = tqdm.tqdm(blockchain, total=END_BLOCK)
 
 for block in iterator:
@@ -176,6 +179,8 @@ for block in iterator:
                 try:
                     in_transaction = pickle.loads(db.get(in_hash.encode('utf-8')))
                     in_value = in_transaction[in_index][0]
+                    if len(in_transaction)==1:
+                        db.delete(in_hash.encode('utf-8'))
                     inSum += in_value
                     in_address = in_transaction[in_index][1]
                     sends.append([in_address, in_value, tx_id, 'SENDS'])

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 sudo systemctl stop neo4j
 sudo chmod -R a+rwx /var/log/neo4j/
-sudo chmod -R a+rwx /ssd2/neo4j/
+sudo chmod -R a+rwx /optane/neo4j/
 
-export DATA=/ssd/bitcoin-csv/data
-export HEADERS=/ssd/bitcoin-csv/headers
+export DATA=./data
+export HEADERS=./headers
 
 neo4j-admin import \
 --mode=csv \
@@ -16,10 +16,10 @@ neo4j-admin import \
 --relationships:RECEIVES $HEADERS/receives-rel-header.csv,$DATA/receives-rel.csv \
 --relationships:SENDS $HEADERS/sends-rel-header.csv,$DATA/sends-rel.csv \
 --ignore-missing-nodes=true \
---ignore-duplicate-nodes=true \
+--ignore-duplicate-nodes=false \
 --multiline-fields=true \
 --high-io=true
 
 sudo chmod -R a+rwx /var/log/neo4j/
-sudo chmod -R a+rwx /ssd2/neo4j/
+sudo chmod -R a+rwx /optane/neo4j/
 sudo systemctl start neo4j
