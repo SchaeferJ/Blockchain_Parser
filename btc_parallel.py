@@ -12,6 +12,7 @@ daemon must NOT be running during conversion.
 import argparse
 import csv
 import os
+import sys
 import pickle
 import math
 import platform
@@ -43,8 +44,6 @@ args = vars(ap.parse_args())
 
 # Check that script is running on Linux, as multiprocessing support relies on POSIX system calls
 if platform.system() != "Linux":
-    import sys
-
     sys.exit("FATAL ERROR: Parallel processing is currently only supported by Linux Systems.")
 
 # Initialize global constants from CLI arguments
@@ -53,7 +52,7 @@ START_BLOCK: int = args['startblock']
 if args['endblock'] > 0:
     END_BLOCK: int = args['endblock']
 else:
-    sys.exit("Endblock must be defined when using parallel processing!")
+    sys.exit("ERROR: Endblock must be defined when using parallel processing!")
 
 if args['outdir'] == "":
     # If no output directory is specified, save processed data to "csv" folder in current directory
