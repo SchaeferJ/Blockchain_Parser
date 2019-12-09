@@ -52,6 +52,8 @@ START_BLOCK: int = args['startblock']
 
 if args['endblock'] > 0:
     END_BLOCK: int = args['endblock']
+else:
+    sys.exit("Endblock must be defined when using parallel processing!")
 
 if args['outdir'] == "":
     # If no output directory is specified, save processed data to "csv" folder in current directory
@@ -121,6 +123,8 @@ mem = psutil.virtual_memory()
 # Read CPU core count to avoid oversubscription of cores
 cpus = psutil.cpu_count()
 
+print("The parser will now profile your system to set the correct processing parameters.")
+
 # Check for user-defined memory constraints and make sure that user did not specify more RAM than installed
 if 0 < args["mem"] <= mem:
     db_memory = args["mem"]
@@ -170,9 +174,12 @@ opts.table_factory = rocksdb.BlockBasedTableFactory(
     block_cache=rocksdb.LRUCache(db_memory * 0.4),
     block_cache_compressed=rocksdb.LRUCache(db_memory * 0.3))
 
+print("Establishing Database connection.")
+
 # Load RocksDB Database
 db = rocksdb.DB(DB_PATH, opts)
 
+print("OK.")
 
 # Define Functions for parallel processing
 
@@ -315,8 +322,10 @@ def generate_csv(BLOCK_PATH, INDEX_PATH, start):
 # Writing one large batch of data after all blocks have been processed would cause the program to run out of memory.
 
 n = max_jobs
-chunks = list(range(0, 606590, 1000))
+chunks = list(range(0, END_BLOCK, 1000))
 steps = [chunks[i:i + n] for i in range(0, len(chunks), n)]
+
+print("Initializing Transaction-Database. Depending on your system, this might take a while...")
 
 for s in tqdm.tqdm(steps):
     with parallel_backend('multiprocessing', n_jobs=max_jobs):
@@ -338,8 +347,12 @@ db.compact_range()
 # but at least one.
 
 n = max(math.floor(mem.available /(15*1024**3)), 1)
-chunks = list(range(0, 606590, 1000))
+chunks = list(range(0, END_BLOCK, 1000))
 steps = [chunks[i:i + n] for i in range(0, len(chunks), n)]
+
+print("Generating CSV Files.")
+print("NOTE: The progress-bar vastly underestimates the duration of this process! Depending on your system "+
+      "configuration, this might take between 20 hours and several days.")
 
 for s in tqdm.tqdm_notebook(steps):
     with parallel_backend('multiprocessing', n_jobs=n):
