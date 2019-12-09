@@ -31,8 +31,6 @@ ap.add_argument("--outdir", help="Directory to store the CSVs in. Defaults to cu
                 type=str, default="")
 ap.add_argument("--dbdir", help="Directory for the RocksDB to reside in. Defaults to current working directory",
                 type=str, default="")
-ap.add_argument("--cores", help="Number of cores the parser is allowed to use",
-                type=str, default="-1")
 ap.add_argument("--mem", help="Maximum memory (in MB) the parser is allowed to use",
                 type=str, default="-1")
 args = vars(ap.parse_args())
@@ -44,6 +42,7 @@ if args['endblock'] > 0:
     END_BLOCK: int = args['endblock']
 
 if args['outdir'] == "":
+    # If no output directory is specified, save processed data to "csv" folder in current directory
     BASE_PATH: str = os.path.join(os.getcwd(), "csv")
     if not os.path.exists(BASE_PATH):
         os.makedirs(BASE_PATH)
@@ -52,10 +51,14 @@ else:
     BASE_PATH: str = args['outdir']
 
 if args['dbdir'] == "":
+    # If no output directory is specified, save database to "transaction_db" folder in current directory
     DB_PATH: str = os.path.join(os.getcwd(), "transaction_db")
     print("No database directory specified. Initializing RocksDB in " + DB_PATH)
 else:
     DB_PATH: str = args['dbdir']
+
+# Set Bitcoin path to system defaults unless specified otherwise.
+# See: https://en.bitcoin.it/wiki/Data_directory
 
 if args['btcdir'] == "":
     host_os = platform.system()
@@ -72,11 +75,9 @@ if args['btcdir'] == "":
 else:
     BLOCK_PATH: str = args['btcdir']
 
+# Create subpaths for Index and Blocks
 BLOCK_PATH = os.path.join(BLOCK_PATH, "blocks")
 INDEX_PATH = os.path.join(BLOCK_PATH, "index")
-
-if not os.path.exists(BASE_PATH):
-    os.makedirs(BASE_PATH)
 
 # Create output files
 address_file = open(os.path.join(BASE_PATH, 'addresses.csv'), 'w')
@@ -100,12 +101,12 @@ receives_file_w = csv.writer(receives_file)
 sends_file = open(os.path.join(BASE_PATH, 'sends-rel.csv'), 'w')
 sends_file_w = csv.writer(sends_file)
 
-# Add coinbase as "special" address
+# Add coinbase as "special" address, since it does not explicitly appear in any transaction
 address_file_w.writerow(['coinbase'])
 
 # Read installed memory to allocate as much RAM as possible to database without bricking the system.
 mem = psutil.virtual_memory()
-cpus = psutil.cpu_count()
+# Check for user-defined memory constraints and make sure that user did not specify more RAM than installed
 
 if 0 < args["mem"] <= mem:
     db_memory = args["mem"]
@@ -123,32 +124,22 @@ else:
 
 print("Found " + str(cpus) + " CPU cores on your system. " + str(max_jobs) + " cores will be used.")
 
-# Define options for RocksDB-Database
 opts = rocksdb.Options()
 # Create new instance if not already present
 opts.create_if_missing = True
 # We have A LOT of BTC-Transactions, so file open limit should be increased
-opts.max_open_files = -1
+opts.max_open_files = 1000000
 # Increase buffer size since I/O is the bottleneck, not RAM
-opts.memtable_factory = rocksdb.VectorMemtableFactory()
-opts.write_buffer_size = db_memory*0.2
-opts.max_write_buffer_number = 10
-opts.target_file_size_base = 128*1024**2
-opts.max_background_compactions=10
-# Bulkload Options as suggested by RocksDB FAQ
-opts.disable_auto_compactions=True
-opts.max_background_flushes=15
-opts.allow_concurrent_memtable_write=False
-opts.level0_file_num_compaction_trigger=-1
-opts.level0_slowdown_writes_trigger=-1
-opts.level0_stop_writes_trigger=999999
-opts.compression = rocksdb.CompressionType.no_compression
-
+opts.write_buffer_size = db_memory * 0.3
+opts.max_write_buffer_number = 3
+opts.target_file_size_base = 67108864
 # Bloom filters for faster lookup
 opts.table_factory = rocksdb.BlockBasedTableFactory(
-    filter_policy=rocksdb.BloomFilterPolicy(10),
-    block_cache=rocksdb.LRUCache(db_memory * 0.4),
-    block_cache_compressed=rocksdb.LRUCache(db_memory * 0.3))
+    filter_policy=rocksdb.BloomFilterPolicy(12),
+    block_cache=rocksdb.LRUCache(60 * (1024 ** 3)),
+    block_cache_compressed=rocksdb.LRUCache(20 * (1024 ** 3)))
+    block_cache=rocksdb.LRUCache(db_memory * 0.3),
+    block_cache_compressed=rocksdb.LRUCache(db_memory * 0.4))
 
 # Load RocksDB Database
 db = rocksdb.DB(DB_PATH, opts)
@@ -179,6 +170,7 @@ for block in iterator:
 
     for tx in block.transactions:
         tx_id = tx.txid
+
         outputs = []
         addresses = []
         receives = []
@@ -186,6 +178,8 @@ for block in iterator:
         outSum = 0
         for o in range(len(tx.outputs)):
             try:
+                # Create a list of outputs, where each output is itself a list comprising value, receiving address and
+                # output number.
                 addr = tx.outputs[o].addresses[0].address
                 val = tx.outputs[o].value
                 outSum += val
@@ -197,25 +191,31 @@ for block in iterator:
                 outSum += val
                 outputs.append([val, 'unknown', o])
                 pass
+        # Add the output list to the database. Data must be serialized to bytestring.
         db.put(tx_id.encode('utf-8'), pickle.dumps(outputs))
         tx_in = tx.inputs
+        # Coinbase transactions (newly generated coins) have no sending address. So there's no need to look it up.
         if not tx.is_coinbase():
             sends = []
+            # Iterate over all transaction inputs
             for i in tx_in:
+                # Get hash of the transaction the coins have been last spent in
                 in_hash = i.transaction_hash
+                # Get the index of the transaction output the coins have been last spent in
                 in_index = i.transaction_index
                 try:
+                    # Retrieve last spending transaction from database
                     in_transaction = pickle.loads(db.get(in_hash.encode('utf-8')))
+                    # Get value and receiving address of last transaction (i.e. spending address in this tx)
                     in_value = in_transaction[in_index][0]
-                    if len(in_transaction)==1:
-                        db.delete(in_hash.encode('utf-8'))
                     inSum += in_value
                     in_address = in_transaction[in_index][1]
                     sends.append([in_address, in_value, tx_id, 'SENDS'])
+                    # Catch exceptions that might occur when dealing with certain kinds of ominous transactions.
+                    # This is very rare and should not break everything.
                 except Exception as e:
                     print(e)
                     continue
-                    # raise Exception("Meh.")
                 del in_transaction, in_address, in_value, in_hash, in_index
         else:
             sends = [["coinbase", sum(map(lambda x: x.value, tx.outputs)), tx_id, 'SENDS']]

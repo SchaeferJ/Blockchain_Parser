@@ -206,7 +206,7 @@ def process_chunk(BLOCK_PATH, INDEX_PATH, start):
                     outputs.append([val, 'unknown', o])
                     pass
             # Add the output list of the transaction and append it to the collector list. Serialization for the
-            # the database is performed here because it is costly and should be done in paralllel.
+            # the database is performed here because it is costly and should be done in parallel.
             re_data.append((tx_id, pickle.dumps(outputs)))
 
     return re_data
