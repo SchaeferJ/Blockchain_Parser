@@ -62,7 +62,7 @@ MacOS:          /Users/<username>/Library/Application Support/Bitcoin/bitcoin.co
  **6. Install the parsing library**
  
  As of now, the library used for parsing the Blockchain is not available through pip. To install it manually follow
- the instructions on the [project page](https://github.com/SchaeferJ/Blockchain_Parser).
+ the instructions on the [project page](https://github.com/SchaeferJ/python-bitcoin-blockchain-parser).
  
 
 **7. Clone this Repo**

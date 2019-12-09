@@ -1,2 +1,2 @@
-sort ./data/addresses.csv | uniq > ./data/addresses_dedup.csv
-rm ./data/addresses.csv
+sort $DATA/addresses.csv | uniq > $DATA/addresses_dedup.csv
+rm $DATA/addresses.csv

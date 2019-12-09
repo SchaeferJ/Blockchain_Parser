@@ -36,11 +36,13 @@ ap.add_argument("--outdir", help="Directory to store the CSVs in. Defaults to cu
 ap.add_argument("--dbdir", help="Directory for the RocksDB to reside in. Defaults to current working directory",
                 type=str, default="")
 ap.add_argument("--cores", help="Number of cores the parser is allowed to use",
-                type=str, default=-1)
+                type=int, default=-1)
 ap.add_argument("--mem", help="Maximum memory (in MB) the parser is allowed to use",
-                type=str, default=-1)
+                type=int, default=-1)
 
 args = vars(ap.parse_args())
+
+print(args["mem"])
 
 # Check that script is running on Linux, as multiprocessing support relies on POSIX system calls
 if platform.system() != "Linux":
@@ -125,14 +127,14 @@ cpus = psutil.cpu_count()
 print("The parser will now profile your system to set the correct processing parameters.")
 
 # Check for user-defined memory constraints and make sure that user did not specify more RAM than installed
-if 0 < args["mem"] <= mem:
-    db_memory = args["mem"]
+if 0 < args["mem"]*1024**2 <= mem.available:
+    db_memory = args["mem"]*1024**2
 else:
     db_memory = mem.available - (4 * 1024 ** 3)
 
 print("Found " + str(round(mem.total / 1024 ** 3, 1)) + "GB of RAM on your system, " + str(
     round(mem.available / 1024 ** 3, 1)) + \
-      "GB of which are available. RocksDB will use up to" + str(round(db_memory / 1024 ** 3, 1)) + "GB for Cache.")
+      "GB of which are available. RocksDB will use up to " + str(round(db_memory / 1024 ** 3, 1)) + " GB for Cache.")
 
 # Check for user-defined core constraints and make sure that user did not specify more cores than installed
 if 0 < args["cores"] <= cpus:
@@ -353,7 +355,7 @@ print("Generating CSV Files.")
 print("NOTE: The progress-bar vastly underestimates the duration of this process! Depending on your system "+
       "configuration, this might take between 20 hours and several days.")
 
-for s in tqdm.tqdm_notebook(steps):
+for s in tqdm.tqdm(steps):
     with parallel_backend('multiprocessing', n_jobs=n):
         collector = Parallel(n_jobs=-1)(delayed(generate_csv)(BLOCK_PATH, INDEX_PATH, c) for c in s)
     # Extract and flatten data

@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 sudo systemctl stop neo4j
 sudo chmod -R a+rwx /var/log/neo4j/
-sudo chmod -R a+rwx /optane/neo4j/
+sudo chmod -R a+rwx $DBDIR
 
-export DATA=./data
 export HEADERS=./headers
 
 neo4j-admin import \
@@ -21,5 +20,5 @@ neo4j-admin import \
 --high-io=true
 
 sudo chmod -R a+rwx /var/log/neo4j/
-sudo chmod -R a+rwx /optane/neo4j/
+sudo chmod -R a+rwx $DBDIR
 sudo systemctl start neo4j

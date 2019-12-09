@@ -32,7 +32,7 @@ ap.add_argument("--outdir", help="Directory to store the CSVs in. Defaults to cu
 ap.add_argument("--dbdir", help="Directory for the RocksDB to reside in. Defaults to current working directory",
                 type=str, default="")
 ap.add_argument("--mem", help="Maximum memory (in MB) the parser is allowed to use",
-                type=str, default=-1)
+                type=int, default=-1)
 args = vars(ap.parse_args())
 
 # Initialize global constants from CLI arguments
@@ -108,7 +108,7 @@ address_file_w.writerow(['coinbase'])
 mem = psutil.virtual_memory()
 # Check for user-defined memory constraints and make sure that user did not specify more RAM than installed
 
-if 0 < args["mem"] <= mem:
+if 0 < args["mem"] <= mem.available:
     db_memory = args["mem"]
 else:
     db_memory = mem.available - (4 * 1024 ** 3)
