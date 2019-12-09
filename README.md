@@ -24,6 +24,10 @@ the last phase of the import process (Neo4j import) you will not be able to use 
   * On Debian/Ubuntu:  `sudo apt-get install neo4j`
   * All others click [here](https://neo4j.com/docs/operations-manual/current/installation/) for Instructions
 
+**1.1 Install APOC for Neo4J**
+
+Find instructions [here](https://github.com/neo4j-contrib/neo4j-apoc-procedures#manual-installation-download-latest-release)
+
 **2. Install RocksDB**
 
 Click [here](https://python-rocksdb.readthedocs.io/en/latest/installation.html) for instructions.
@@ -58,7 +62,7 @@ MacOS:          /Users/<username>/Library/Application Support/Bitcoin/bitcoin.co
  **6. Install the parsing library**
  
  As of now, the library used for parsing the Blockchain is not available through pip. To install it manually follow
- the instructions on the [project page](https://github.com/alecalve/python-bitcoin-blockchain-parser).
+ the instructions on the [project page](https://github.com/SchaeferJ/Blockchain_Parser).
  
 
 **7. Clone this Repo**
@@ -90,10 +94,13 @@ The following flags are available:
 ```
 --help:             Displays a help message
 --startblock        Block height to start at. Defaults to 0 (Genesis)
---endblock          Block height to stop at. Defaults to -1 (entire chain)
+--endblock          Block height to stop at. Defaults to -1 (entire chain). **Must be specified
+                    when using parallel processing**
 --btcdir            Directory of Bitcoin Core. Defaults to system standard
 --outdir            Output directory. Defaults to working directory.
 --dbdir             Directory for RocksDB database. Defaults to working directory.
+--mem               Maximum allocated memory
+--cores             Maximum allocated cores (multiprocessing only)
 ```
 
 **9. Import CSVs to Neo4j**
