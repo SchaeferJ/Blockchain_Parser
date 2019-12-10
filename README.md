@@ -107,10 +107,12 @@ The following flags are available:
 ```
 
 **9. Import CSVs to Neo4j**
+
 * Linux: `bash ./csv-to-neo4j.sh`
 * Others: Please create appropriate [header files](https://neo4j.com/docs/operations-manual/current/tools/import/file-header-format/) and refer to the documentation of the [import tool](https://neo4j.com/docs/operations-manual/current/tools/import/)
 
 **10. Construct additional attributes**
+
 For efficiency reasons, not all node attributes are generated during parsing. In this last step, you have
 to generate the attributes manually:
 
