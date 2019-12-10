@@ -225,7 +225,7 @@ for block in iterator:
         outDegree = len(tx.outputs)
 
         # Write CSV files
-        transaction_file_w.writerow([tx_id, block_date, inDegree, outDegree, inSum, outSum])
+        transaction_file_w.writerow([tx_id, str(block_date)[0:10], inDegree, outDegree, inSum, outSum])
         belongs_file_w.writerow([tx_id, block_hash, 'BELONGS_TO'])
         address_file_w.writerows(addresses)
         receives_file_w.writerows(receives)

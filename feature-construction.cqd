@@ -16,3 +16,9 @@ RETURN a, inDegree'
 ,
 'SET a.inDegree=inDegree', {batchSize:10000,iterateList:true,parallel:true}
 );
+
+CREATE INDEX ON :Address(address) 
+CREATE INDEX ON :Block(mediantime) 
+CREATE INDEX ON :Transaction(date) 
+CREATE INDEX ON :Transaction(inSum) 
+CREATE INDEX ON :Transaction(txid)

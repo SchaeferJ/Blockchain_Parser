@@ -309,7 +309,7 @@ def generate_csv(BLOCK_PATH, INDEX_PATH, start):
             inDegree = len(sends)
             outDegree = len(tx.outputs)
 
-            transaction_data.append([tx_id, block_date, inDegree, outDegree, inSum, outSum])
+            transaction_data.append([tx_id, str(block_date)[0:10], inDegree, outDegree, inSum, outSum])
             belongs_data.append([tx_id, block_hash, 'BELONGS_TO'])
 
     # Return Lists
