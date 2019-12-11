@@ -281,6 +281,7 @@ def generate_csv(BLOCK_PATH, INDEX_PATH, start):
             if not tx.is_coinbase():
                 # Iterate over all transaction inputs
                 for i in tx_in:
+                    inDegree +=1
                     # Get hash of the transaction the coins have been last spent in
                     in_hash = i.transaction_hash
                     # Get the index of the transaction output the coins have been last spent in
@@ -304,9 +305,9 @@ def generate_csv(BLOCK_PATH, INDEX_PATH, start):
                 # Simplified parsing for coinbase transactions
                 sends = [["coinbase", sum(map(lambda x: x.value, tx.outputs)), tx_id, 'SENDS']]
                 inSum = sends[0][1]
+                inDegree = 1
 
             # In-Degree is length of sending adddresses, out-degree the number of tx outputs
-            inDegree = len(sends)
             outDegree = len(tx.outputs)
 
             transaction_data.append([tx_id, str(block_date)[0:10], inDegree, outDegree, inSum, outSum])

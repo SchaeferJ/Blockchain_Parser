@@ -199,6 +199,7 @@ for block in iterator:
             sends = []
             # Iterate over all transaction inputs
             for i in tx_in:
+                inDegree += 1
                 # Get hash of the transaction the coins have been last spent in
                 in_hash = i.transaction_hash
                 # Get the index of the transaction output the coins have been last spent in
@@ -220,8 +221,8 @@ for block in iterator:
         else:
             sends = [["coinbase", sum(map(lambda x: x.value, tx.outputs)), tx_id, 'SENDS']]
             inSum = sends[0][1]
+            inDegree = 1
 
-        inDegree = len(sends)
         outDegree = len(tx.outputs)
 
         # Write CSV files
