@@ -44,8 +44,6 @@ if args['endblock'] > 0:
 if args['outdir'] == "":
     # If no output directory is specified, save processed data to "csv" folder in current directory
     BASE_PATH: str = os.path.join(os.getcwd(), "csv")
-    if not os.path.exists(BASE_PATH):
-        os.makedirs(BASE_PATH)
     print("No output directory specified. Saving files to " + BASE_PATH)
 else:
     BASE_PATH: str = args['outdir']
@@ -74,7 +72,9 @@ if args['btcdir'] == "":
           BLOCK_PATH)
 else:
     BLOCK_PATH: str = args['btcdir']
-
+    
+if not os.path.exists(BASE_PATH):
+    os.makedirs(BASE_PATH)
 # Create subpaths for Index and Blocks
 BLOCK_PATH = os.path.join(BLOCK_PATH, "blocks")
 INDEX_PATH = os.path.join(BLOCK_PATH, "index")
