@@ -72,7 +72,7 @@ if args['btcdir'] == "":
           BLOCK_PATH)
 else:
     BLOCK_PATH: str = args['btcdir']
-    
+
 if not os.path.exists(BASE_PATH):
     os.makedirs(BASE_PATH)
 # Create subpaths for Index and Blocks
@@ -176,6 +176,7 @@ for block in iterator:
         receives = []
         inSum = 0
         outSum = 0
+        inDegree = 0
         for o in range(len(tx.outputs)):
             try:
                 # Create a list of outputs, where each output is itself a list comprising value, receiving address and

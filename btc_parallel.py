@@ -264,6 +264,7 @@ def generate_csv(BLOCK_PATH, INDEX_PATH, start):
             # Initialize summing variables
             inSum = 0
             outSum = 0
+            inDegree = 0
             for o in range(len(tx.outputs)):
                 try:
                     addr = tx.outputs[o].addresses[0].address
@@ -322,7 +323,7 @@ def generate_csv(BLOCK_PATH, INDEX_PATH, start):
 # lists, where the number of elements corresponds to the number of parallel jobs. Thus, 100% of allocated CPU power
 # can be used. Splitting processing up in several steps is necessary, as RocksDB does not allow concurrent writes.
 # Writing one large batch of data after all blocks have been processed would cause the program to run out of memory.
-
+"""
 n = max_jobs
 chunks = list(range(0, END_BLOCK, 1000))
 steps = [chunks[i:i + n] for i in range(0, len(chunks), n)]
@@ -345,10 +346,10 @@ for s in tqdm.tqdm(steps):
 # Auto-Compaction of database was disabled, so it has to be manually triggered.
 db.compact_range()
 
-# Same as above, but the limiting factor is now RAM. Run as many jobs as can fit into memory (15 GB per process),
+# Same as above, but the limiting factor is now RAM. Run as many jobs as can fit into memory (25 GB per process),
 # but at least one.
-
-n = max(math.floor(mem.available /(15*1024**3)), 1)
+"""
+n = max(math.floor(mem.available /(25*1024**3)), 1)
 chunks = list(range(0, END_BLOCK, 1000))
 steps = [chunks[i:i + n] for i in range(0, len(chunks), n)]
 
