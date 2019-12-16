@@ -15,7 +15,7 @@ neo4j-admin import \
 --relationships:RECEIVES $HEADERS/receives-rel-header.csv,$DATA/receives-rel.csv \
 --relationships:SENDS $HEADERS/sends-rel-header.csv,$DATA/sends-rel.csv \
 --ignore-missing-nodes=true \
---ignore-duplicate-nodes=false \
+--ignore-duplicate-nodes=true \
 --multiline-fields=true \
 --high-io=true
 
