@@ -7,7 +7,6 @@ RETURN a, outDegree'
 'SET a.outDegree=outDegree', {batchSize:10000,iterateList:true,parallel:true}
 );
 
-
 call apoc.periodic.iterate(
 'MATCH (a:Address)
 WITH a, size((:Transaction)-[:RECEIVES]->(a:Address)) AS inDegree
