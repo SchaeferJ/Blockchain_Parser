@@ -320,35 +320,11 @@ def generate_csv(BLOCK_PATH, INDEX_PATH, start):
 
 
 # Create the chunks for processing. Will generate chunks of 1,000 blocks and split these chunks into equal-sized
-# lists, where the number of elements corresponds to the number of parallel jobs. Thus, 100% of allocated CPU power
-# can be used. Splitting processing up in several steps is necessary, as RocksDB does not allow concurrent writes.
+# lists, where the number of elements corresponds to the number of parallel jobs. Thus, up to 100% of allocated CPU power
+# can be used. Runs as many jobs as can fit into memory (25 GB per process), but at least one. 
+# Splitting processing up in several steps is necessary, as RocksDB does not allow concurrent writes.
 # Writing one large batch of data after all blocks have been processed would cause the program to run out of memory.
-"""
-n = max_jobs
-chunks = list(range(0, END_BLOCK, 1000))
-steps = [chunks[i:i + n] for i in range(0, len(chunks), n)]
 
-print("Initializing Transaction-Database. Depending on your system, this might take a while...")
-
-for s in tqdm.tqdm(steps):
-    with parallel_backend('multiprocessing', n_jobs=max_jobs):
-        result = Parallel(n_jobs=-1)(delayed(process_chunk)(BLOCK_PATH, INDEX_PATH, c) for c in s)
-    # Write results to database
-    for entry in result:
-        # Pooling for faster insert
-        batch = rocksdb.WriteBatch()
-        for e in entry:
-            batch.put(e[0].encode(), e[1])
-        db.write(batch)
-
-    del result
-
-# Auto-Compaction of database was disabled, so it has to be manually triggered.
-db.compact_range()
-
-# Same as above, but the limiting factor is now RAM. Run as many jobs as can fit into memory (25 GB per process),
-# but at least one.
-"""
 n = max(math.floor(mem.available /(25*1024**3)), 1)
 chunks = list(range(0, END_BLOCK, 1000))
 steps = [chunks[i:i + n] for i in range(0, len(chunks), n)]
