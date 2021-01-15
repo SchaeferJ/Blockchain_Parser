@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Creates Header-Files for node4j import
 mkdir headers
-echo 'txid:ID(Transaction),date:date,inDegree:int, outDegree:int, inSum:long, outSum:long' > ./headers/transactions-header.csv
+echo 'txid:ID(Transaction),date:date,inDegree:int,outDegree:int,inSum:long,outSum:long' > ./headers/transactions-header.csv
 echo 'address:ID(Address)' > ./headers/addresses-header.csv
 echo ':START_ID(Block),:END_ID(Block),:TYPE' > ./headers/before-rel-header.csv
 echo ':START_ID(Transaction),:END_ID(Block),:TYPE' > ./headers/belongs-rel-header.csv

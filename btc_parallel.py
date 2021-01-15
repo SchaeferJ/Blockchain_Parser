@@ -329,9 +329,26 @@ n = max(math.floor(mem.available /(25*1024**3)), 1)
 chunks = list(range(0, END_BLOCK, 1000))
 steps = [chunks[i:i + n] for i in range(0, len(chunks), n)]
 
+print("Initializing Transaction-Database. Depending on your system, this might take a while...")
+# for s in tqdm.tqdm(steps):
+#     with parallel_backend('multiprocessing', n_jobs=max_jobs):
+#         result = Parallel(n_jobs=-1)(delayed(process_chunk)(BLOCK_PATH, INDEX_PATH, c) for c in s)
+#     # Write results to database
+#     for entry in result:
+#         # Pooling for faster insert
+#         batch = rocksdb.WriteBatch()
+#         for e in entry:
+#             batch.put(e[0].encode(), e[1])
+#         db.write(batch)
+#     del result
+# # Auto-Compaction of database was disabled, so it has to be manually triggered.
+# db.compact_range()
+# # Same as above, but the limiting factor is now RAM. Run as many jobs as can fit into memory (25 GB per process),
+# # but at least one.
+
 print("Generating CSV Files.")
 print("NOTE: The progress-bar vastly underestimates the duration of this process! Depending on your system "+
-      "configuration, this might take between 20 hours and several days.")
+       "configuration, this might take between 20 hours and several days.")
 
 for s in tqdm.tqdm(steps):
     with parallel_backend('multiprocessing', n_jobs=n):

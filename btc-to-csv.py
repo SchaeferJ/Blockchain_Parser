@@ -115,14 +115,14 @@ else:
 
 print("Found " + str(round(mem.total / 1024 ** 3, 1)) + "GB of RAM on your system, " + str(
     round(mem.available / 1024 ** 3, 1)) + \
-      "GB of which are available. RocksDB will use up to" + str(round(db_memory / 1024 ** 3, 1)) + "GB for Cache.")
+      "GB of which are available. RocksDB will use up to " + str(round(db_memory / 1024 ** 3, 1)) + "GB for Cache.")
 
-if 0 < args["cores"] <= cpus:
-    max_jobs = args["cores"]
-else:
-    max_jobs = cpus - 1
+# if 0 < args["cores"] <= cpus:
+#     max_jobs = args["cores"]
+# else:
+#     max_jobs = cpus - 1
 
-print("Found " + str(cpus) + " CPU cores on your system. " + str(max_jobs) + " cores will be used.")
+# print("Found " + str(cpus) + " CPU cores on your system. " + str(max_jobs) + " cores will be used.")
 
 opts = rocksdb.Options()
 # Create new instance if not already present
@@ -136,8 +136,6 @@ opts.target_file_size_base = 67108864
 # Bloom filters for faster lookup
 opts.table_factory = rocksdb.BlockBasedTableFactory(
     filter_policy=rocksdb.BloomFilterPolicy(12),
-    block_cache=rocksdb.LRUCache(60 * (1024 ** 3)),
-    block_cache_compressed=rocksdb.LRUCache(20 * (1024 ** 3)))
     block_cache=rocksdb.LRUCache(db_memory * 0.3),
     block_cache_compressed=rocksdb.LRUCache(db_memory * 0.4))
 
@@ -156,7 +154,7 @@ if END_BLOCK < 1:
     iterator = blockchain
 else:
     blockchain = blockchain.get_ordered_blocks(INDEX_PATH, start=START_BLOCK, end=END_BLOCK)
-    iterator = tqdm.tqdm(blockchain, total=END_BLOCK)
+    iterator = tqdm.tqdm(blockchain, total=END_BLOCK-START_BLOCK)
 
 for block in iterator:
     block_height = block.height
