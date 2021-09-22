@@ -101,8 +101,9 @@ receives_file_w = csv.writer(receives_file)
 sends_file = open(os.path.join(BASE_PATH, 'sends-rel.csv'), 'w')
 sends_file_w = csv.writer(sends_file)
 
-# Add coinbase as "special" address, since it does not explicitly appear in any transaction
+# Add coinbase and unknown as "special" address, since it does not explicitly appear in any transaction
 address_file_w.writerow(['coinbase'])
+address_file_w.writerow(['unknown'])
 
 # Read installed memory to allocate as much RAM as possible to database without bricking the system.
 mem = psutil.virtual_memory()
