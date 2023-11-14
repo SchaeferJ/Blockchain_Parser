@@ -3,6 +3,6 @@ certifi==2022.12.7
 chardet==3.0.4
 idna==2.8
 python-rocksdb==0.7.0
-requests==2.22.0
+requests==2.31.0
 tqdm==4.32.2
 urllib3==1.26.5
