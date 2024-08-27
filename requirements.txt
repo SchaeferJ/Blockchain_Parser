@@ -1,7 +1,7 @@
 psutil
 certifi==2024.7.4
 chardet==3.0.4
-idna==2.8
+idna==3.7
 python-rocksdb==0.7.0
 requests==2.31.0
 tqdm==4.32.2
