@@ -5,4 +5,4 @@ idna==3.7
 python-rocksdb==0.7.0
 requests==2.31.0
 tqdm==4.32.2
-urllib3==1.26.19
+urllib3==2.5.0
